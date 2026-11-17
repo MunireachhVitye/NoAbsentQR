@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>NoAbsentQR</title>
+    <meta name="description" content="A fully open source QR Attendance Check-in System" />
+    <meta name="language" content="English" />
+    <base href="https://vityea.us.kg/">
+    <meta name="description" content="A fully open source QR Attendance Check-in System">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,shrink-to-fit=no,viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-title" content="NoAbsentQR">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="NoAbsentQR">
+    <meta name="application-name" content="NoAbsentQR">
+    <meta name="msapplication-TileColor" content="#2defc2">
+    <meta name="msapplication-TileImage" content="144x144.png">
+    <meta name="msapplication-config" content="browserconfig.xml">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="color-scheme" content="light">
+    <meta name="google" content="notranslate">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://noabsentqr.vityea.us.kg/">
+    <meta property="og:title" content="NoAbsentQR">
+    <meta property="og:description" content="A fully open source QR Attendance Check-in System">
+    <meta property="og:image" content="192x192.png">
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://noabsentqr.vityea.us.kg/">
+    <meta property="twitter:title" content="NoAbsentQR">
+    <meta property="twitter:description" content="A fully open source QR Attendance Check-in System">
+    <meta property="twitter:image" content="192x192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="32x32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="192x192.png">
+    <link rel="alternate icon" href="favicon.ico" type="image/x-icon">
+    <link rel="canonical" href="https://noabsentqr.vityea.us.kg/">
+    <link rel="manifest" id="manifest" href="site.webmanifest">
+    <link href="ms.css" rel="stylesheet" type="text/css" />
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body class="light-mode">
+<h1>NoAbsentQR</h1>
+<p>View this code on Github: <a href="https://github.com/MunireachhVitye/NoAbsentQR" class="no_under blue">https://github.com/MunireachhVitye/NoAbsentQR</a></p>
+<hr>
+<img id="qrStart" style="display: block;" onclick="startScanner()" src="https://raw.githubusercontent.com/MunireachhVitye/noream-qr/a0981715175378e3b8c1a998ce7953000396add2/qr_icon.svg" alt="QR Start Scan" width="30%" height="30%">
+<div id="reader"></div>
+<div id="notification"></div>
+
+<button id="openBtn" class="black btn" hidden>Open attendance</button>
+<button id="shareBtn" class="btn green" hidden>Share via Telegram</button>
+<hr>
+<details class="pointer">
+<summary>Project History</summary>
+<p>
+This project exists because sometimes our friends' phones cannot scan attendance QR codes, or the QR code is too small to scan from the back of the room.<br>
+NoAbsentQR was created in good faith to help students with capable cameras assist classmates who have older devices or unreliable internet connections.
+</p>
+</details>
+<hr>
+<footer><center><p>&copy; 2026 NoAbsentQR. Licensed under the Apache License 2.0</p></center></footer>
+<!--JS Func-->
+<script>
+
+const scanner = new Html5Qrcode("reader", {
+    formatsToSupport: [
+        Html5QrcodeSupportedFormats.QR_CODE
+    ]
+});
+
+let lastUrl = sessionStorage.getItem("lastUrl");
+let notificationTimer;
+
+const openBtn = document.getElementById("openBtn");
+const shareBtn = document.getElementById("shareBtn");
+const notification = document.getElementById("notification");
+
+function updateActions(url) {
+    openBtn.hidden = false;
+    shareBtn.hidden = false;
+
+    openBtn.onclick = () => {
+        window.open(url, "_blank", "noopener,noreferrer");
+    };
+
+    shareBtn.onclick = () => shareTelegram(url);
+}
+
+function notifyUser(url) {
+    notification.textContent = "New attendance URL detected!";
+    notification.style.display = "block";
+
+    clearTimeout(notificationTimer);
+
+    notificationTimer = setTimeout(() => {
+        notification.style.display = "none";
+    }, 5000);
+}
+
+function shareTelegram(url) {
+    const share = new URL("https://t.me/share/url");
+
+    share.searchParams.set("url", url);
+    share.searchParams.set("text", "Attendance link:");
+
+    window.open(share.toString(), "_blank");
+}
+
+async function startScanner() {
+    document.getElementById("qrStart").style.display = "none";
+
+    try {
+        await scanner.start(
+            { facingMode: "environment" },
+            {
+                fps: 10,
+                qrbox: { width: 250, height: 250 }
+            },
+            (decodedText) => {
+                let url;
+
+                try {
+                    url = new URL(decodedText);
+
+                    if (url.protocol !== "https:") return;
+                } catch {
+                    return;
+                }
+
+                if (decodedText !== lastUrl) {
+                    lastUrl = decodedText;
+                    sessionStorage.setItem("lastUrl", decodedText);
+                    notifyUser(decodedText);
+                }
+
+                updateActions(decodedText);
+            }
+        );
+    } catch (error) {
+        notification.textContent = "Camera error: " + error;
+        notification.style.display = "block";
+        document.getElementById("qrStart").style.display = "block";
+    }
+}
+</script>
+</body>
+</html>
